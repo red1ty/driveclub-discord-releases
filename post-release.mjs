@@ -17,7 +17,6 @@ const REPO = process.env.SOURCE_REPO || "OverkillLabs3/driveclub-recomp";
 const CHANNELS = {
   startHere: "1563589651871039712",
   setupHelp: "1563588370347855932",
-  bugReports: "1563586517228593152",
 };
 const DESCRIPTION_LIMIT = 4000;
 
@@ -74,7 +73,7 @@ export async function buildPayload(release) {
   if (sha) fields.push({ name: "SHA-256", value: "`" + sha + "`" });
   fields.push({
     name: "New here?",
-    value: `Read <#${CHANNELS.startHere}>. Stuck? <#${CHANNELS.setupHelp}>. Found a bug? <#${CHANNELS.bugReports}> with your logs.`,
+    value: `Read <#${CHANNELS.startHere}>. Stuck? <#${CHANNELS.setupHelp}>. Found a bug? [Report it on GitHub](https://github.com/${REPO}/issues/new/choose) with your logs.`,
   });
 
   const role = process.env.RELEASE_PING_ROLE;
