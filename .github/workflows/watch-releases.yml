@@ -1,0 +1,51 @@
+name: Post new releases to Discord
+
+on:
+  schedule:
+    # Every 15 minutes, off the hour to dodge GitHub's busiest slots.
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Check and print, but don't post
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: watch-releases
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Post any new releases
+        env:
+          WATCH: "1"
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_PING_ROLE: ${{ vars.RELEASE_PING_ROLE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node post-release.mjs
+
+      - name: Save the last posted tag
+        run: |
+          if ! git diff --quiet state/last-tag.txt; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898099+github-actions[bot]@users.noreply.github.com"
+            git commit -am "Posted $(cat state/last-tag.txt) to Discord"
+            git push
+          fi
+
+      # GitHub pauses schedules in repos with no activity for 60 days; this keeps it running.
+      - name: Keep the schedule alive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/watch-releases.yml/enable"
